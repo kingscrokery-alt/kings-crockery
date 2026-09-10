@@ -15,3 +15,248 @@
 .editorial-pair .replacement-image,.story-hero>.replacement-image{object-fit:contain}
 .hero-photo.replacement-image{object-position:50% 35%}
 @media(max-width:700px){.hero-photo.replacement-image{object-fit:contain;background:#111c3a}}
+
+/* ==========================================================================
+   CATEGORY TABS CAROUSEL (COLLECTIONS)
+   Luxury horizontal category navigator with arrows & mobile touch-swipe
+   ========================================================================== */
+
+.category-tabs-carousel {
+  position: relative;
+  width: 100%;
+  background: #fbfbf9;
+  border-top: 1px solid #e8e5dc;
+  border-bottom: 1px solid #e8e5dc;
+  user-select: none;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+/* Edge Fade Gradient Masks */
+.category-tabs-carousel::before,
+.category-tabs-carousel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 75px;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.category-tabs-carousel::before {
+  left: 0;
+  background: linear-gradient(to right, #fbfbf9 30%, rgba(251, 251, 249, 0));
+}
+
+.category-tabs-carousel::after {
+  right: 0;
+  background: linear-gradient(to left, #fbfbf9 30%, rgba(251, 251, 249, 0));
+}
+
+.category-tabs-carousel.has-left::before {
+  opacity: 1;
+}
+
+.category-tabs-carousel.has-right::after {
+  opacity: 1;
+}
+
+/* Horizontal Track with Momentum Touch-Swiping */
+.category-tabs-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 72px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  cursor: grab;
+}
+
+.category-tabs-track:active {
+  cursor: grabbing;
+}
+
+.category-tabs-track::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Circular Floating Navigation Arrows */
+.tab-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(17, 28, 58, 0.16);
+  color: var(--navy, #111c3a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(17, 28, 58, 0.1), 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  padding: 0;
+}
+
+.tab-arrow-btn.left {
+  left: 16px;
+}
+
+.tab-arrow-btn.right {
+  right: 16px;
+}
+
+.tab-arrow-btn:hover:not(:disabled) {
+  background: var(--navy, #111c3a);
+  color: #ffffff;
+  border-color: var(--navy, #111c3a);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 20px rgba(17, 28, 58, 0.22);
+}
+
+.tab-arrow-btn:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.tab-arrow-btn:disabled,
+.tab-arrow-btn.is-disabled {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.7);
+  visibility: hidden;
+}
+
+/* Category Tab Pill */
+.category-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 4px 18px 4px 6px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 28, 58, 0.12);
+  color: #2c303f;
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+}
+
+.category-tab-pill:hover {
+  background: #f4f2ed;
+  border-color: rgba(17, 28, 58, 0.28);
+  color: var(--navy, #111c3a);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(17, 28, 58, 0.08);
+}
+
+.category-tab-pill.active {
+  background: var(--navy, #111c3a) !important;
+  border-color: var(--navy, #111c3a) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(17, 28, 58, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+/* Micro-Thumbnail Wrap */
+.tab-pill-thumb-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #eae7df;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.2s ease;
+}
+
+.category-tab-pill.active .tab-pill-thumb-wrap {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.tab-pill-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Category Title */
+.tab-pill-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.category-tab-pill.active .tab-pill-title {
+  font-weight: 600;
+}
+
+/* Mobile Screen & Finger-Swipe Adaptation (max-width: 768px) */
+@media (max-width: 768px) {
+  .tab-arrow-btn {
+    display: none !important;
+  }
+  .category-tabs-track {
+    padding: 10px 16px;
+    gap: 8px;
+    scroll-snap-type: x mandatory;
+  }
+  .category-tabs-carousel::before,
+  .category-tabs-carousel::after {
+    width: 28px;
+  }
+  .category-tab-pill {
+    height: 40px;
+    padding: 3px 14px 3px 5px;
+    gap: 8px;
+    scroll-snap-align: center;
+  }
+  .tab-pill-thumb-wrap {
+    width: 30px;
+    height: 30px;
+  }
+  .tab-pill-title {
+    font-size: 12.5px;
+  }
+}
+
+/* Smooth Collection Products Transition */
+.collection-grid-wrap {
+  animation: gridFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes gridFadeIn {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
