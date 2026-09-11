@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "vinext build && node scripts/prepare-static-routes.cjs",
     "start": "vinext start",
     "deploy": "git add . && git commit -m \"Update live site\" && git push origin main",
     "lint": "oxlint",

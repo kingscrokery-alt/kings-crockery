@@ -223,6 +223,7 @@ export default function Storefront({ path }: { path: string }) {
   const [mobile, setMobile] = useState(false);
   const [order, setOrder] = useState(false);
   const [notice, setNotice] = useState('');
+  const [homeCategory, setHomeCategory] = useState('all');
 
   // Hydrate the browser-owned cart after SSR.
   useEffect(() => {
@@ -278,7 +279,8 @@ export default function Storefront({ path }: { path: string }) {
     window.location.href = `https://wa.me/${shopConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
   };
 
-  const mainKey = path.split('/').pop() || '';
+  const normalizedPath = (path || '/').replace(/\/+$/, '') || '/';
+  const mainKey = normalizedPath.split('/').pop() || '';
   const p = catalog.find(p => p.id === mainKey);
 
   const activeDepartment = navDepartments.find(d => d.label === menu);
@@ -309,30 +311,36 @@ export default function Storefront({ path }: { path: string }) {
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <button
+          <Link
+            href="/collections/all"
+            className="nav-link-btn"
             aria-expanded={menu === 'All Categories'}
             onMouseEnter={() => setMenu('All Categories')}
-            onClick={() => setMenu(menu === 'All Categories' ? '' : 'All Categories')}
+            onClick={() => setMenu('')}
           >
             All Categories <ChevronDown size={13} />
-          </button>
+          </Link>
           {navDepartments.map(d => (
-            <button
+            <Link
               key={d.label}
+              href={categoryUrl(d.items[0])}
+              className="nav-link-btn"
               aria-expanded={menu === d.label}
               onMouseEnter={() => setMenu(d.label)}
-              onClick={() => setMenu(menu === d.label ? '' : d.label)}
+              onClick={() => setMenu('')}
             >
               {d.label} <ChevronDown size={13} />
-            </button>
+            </Link>
           ))}
-          <button
+          <Link
+            href="/pages/our-story"
+            className="nav-link-btn"
             aria-expanded={menu === 'About'}
             onMouseEnter={() => setMenu('About')}
-            onClick={() => setMenu(menu === 'About' ? '' : 'About')}
+            onClick={() => setMenu('')}
           >
             About <ChevronDown size={13} />
-          </button>
+          </Link>
         </nav>
 
         {/* Dynamic Mega Menu */}
@@ -434,6 +442,32 @@ export default function Storefront({ path }: { path: string }) {
               <Grid items={best} add={add} />
             </section>
 
+            {/* Interactive All 17 Collections Explorer on Main Website */}
+            <section className="section home-categories-explorer" style={{ paddingTop: '10px' }}>
+              <div className="collection-heading" style={{ background: 'transparent', padding: '0 0 28px' }}>
+                <p className="eyebrow">Explore Kings Crockery</p>
+                <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', marginBottom: '12px' }}>
+                  {homeCategory === 'all' ? 'All 17 Collections' : (categories.find(c => slug(c) === homeCategory) || homeCategory)}
+                </h2>
+                <p>Browse dining essentials, fine dinner sets, cookware, tea sets and serving pieces right here.</p>
+              </div>
+
+              <CategoryTabs
+                collection={homeCategory}
+                onSelectCategory={(s) => setHomeCategory(s)}
+              />
+
+              <div className="collection-grid-wrap" key={homeCategory} style={{ marginTop: '30px' }}>
+                <Grid items={collectionProducts(homeCategory).slice(0, 16)} add={add} />
+              </div>
+
+              <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                <Link className="button" href={categoryUrl(homeCategory)}>
+                  View Full {homeCategory === 'all' ? 'Catalogue (150+ Items)' : (categories.find(c => slug(c) === homeCategory) || homeCategory)} Collection <ArrowRight size={17} />
+                </Link>
+              </div>
+            </section>
+
             {/* Split Section: Nonstick & Cookware */}
             <section className="split">
               <StoreImage src="/images/categories/nonstick.jpg" alt="Royal Granite Nonstick Cookware" loading="lazy" />
@@ -486,15 +520,15 @@ export default function Storefront({ path }: { path: string }) {
             {/* 17 Categories Showcase Strip */}
             <CategoryStrip />
           </>
-        ) : path.includes('/products/') ? (
+        ) : normalizedPath.includes('/products/') ? (
           p ? (
             <ProductPage key={p.id} p={p} add={add} orderNow={(color, qty) => { add(p, color, qty); setDrawer(false); setOrder(true); }} />
           ) : (
             <Missing />
           )
-        ) : path.includes('/collections/') ? (
-          <Collection collection={mainKey} add={add} />
-        ) : path === '/cart' ? (
+        ) : normalizedPath.startsWith('/collections') || normalizedPath === '/shop' ? (
+          <Collection collection={mainKey === 'collections' || mainKey === 'shop' || !mainKey ? 'all' : mainKey} add={add} />
+        ) : normalizedPath === '/cart' ? (
           <section className="section cart-page">
             <h1>Your Shopping Cart</h1>
             {renderCart()}
@@ -503,7 +537,7 @@ export default function Storefront({ path }: { path: string }) {
         ) : mainKey === 'build-your-bundle' ? (
           <BundleBuilder add={add} />
         ) : (
-          <InfoPage page={mainKey} orderNow={orderNow} />
+          <InfoPage page={mainKey === 'about' ? 'our-story' : mainKey} orderNow={orderNow} />
         )}
       </main>
 
@@ -1087,15 +1121,16 @@ function Missing() {
 }
 
 function InfoPage({ page, orderNow }: { page: string; orderNow: () => void }) {
-  const title = page.split('-').map(s => s[0]?.toUpperCase() + s.slice(1)).join(' ');
-  if (['our-story', 'craftsmanship'].includes(page)) {
+  const pageKey = page === 'about' ? 'our-story' : page === 'terms' ? 'terms-of-use' : page === 'privacy' ? 'privacy-policy' : page === 'help' ? 'faq' : page;
+  const title = pageKey.split('-').map(s => s[0]?.toUpperCase() + s.slice(1)).join(' ');
+  if (['our-story', 'craftsmanship', 'about'].includes(pageKey)) {
     return (
       <>
         <section className="story-hero">
           <StoreImage src={assets.ceramic} alt="A thoughtfully set table" />
           <div>
             <p className="eyebrow">Kings Crockery</p>
-            <h1>{page === 'our-story' ? 'Good Days Begin Around a Table.' : 'The Details Make the Difference.'}</h1>
+            <h1>{pageKey === 'craftsmanship' ? 'The Details Make the Difference.' : 'Good Days Begin Around a Table.'}</h1>
             <p>From everyday meals to your most memorable gatherings, the pieces on your table become part of the moment.</p>
           </div>
         </section>
@@ -1108,7 +1143,7 @@ function InfoPage({ page, orderNow }: { page: string; orderNow: () => void }) {
       </>
     );
   }
-  if (page === 'our-hours-blog') {
+  if (pageKey === 'our-hours-blog') {
     return (
       <>
         <div className="collection-heading">
@@ -1132,6 +1167,21 @@ function InfoPage({ page, orderNow }: { page: string; orderNow: () => void }) {
       </>
     );
   }
+  if (pageKey === 'setting-the-everyday-table' || pageKey === 'mixing-your-colours') {
+    return (
+      <section className="prose" style={{ paddingTop: '60px' }}>
+        <p className="eyebrow">At the Kings Crockery table</p>
+        <h1 style={{ fontSize: '38px', marginBottom: '20px' }}>{pageKey === 'setting-the-everyday-table' ? 'Setting the Everyday Table' : 'A Table in Your Colours'}</h1>
+        <StoreImage
+          src={pageKey === 'setting-the-everyday-table' ? '/images/categories/bone-china-dinner-set.jpg' : '/images/categories/tea-sets.jpg'}
+          alt=""
+          style={{ margin: '30px 0', borderRadius: '4px' }}
+        />
+        <p>Creating a beautiful table setting brings everyday warmth into any home. Whether you are arranging an intimate family dinner or an afternoon tea, thoughtful dinnerware makes every gathering special.</p>
+        <Link className="button" href="/collections/all">Explore Collections</Link>
+      </section>
+    );
+  }
   const faqs = [
     ['How do I place an order?', 'Add your chosen items to the cart, select Order Now, and share your delivery details through WhatsApp. We will confirm stock, the full price and payment instructions.'],
     ['What is the Rs 250 advance?', 'A Rs 250 advance payment is required to confirm every order. We dispatch your order to your provided address after confirming receipt of the payment.'],
@@ -1149,17 +1199,17 @@ function InfoPage({ page, orderNow }: { page: string; orderNow: () => void }) {
   return (
     <section className="info-page">
       <p className="eyebrow">Kings Crockery</p>
-      <h1>{page === 'faq' ? 'How Can We Help?' : title}</h1>
-      {['faq', 'shipping-returns', 'order-policy'].includes(page) ? (
+      <h1>{pageKey === 'faq' ? 'How Can We Help?' : title}</h1>
+      {['faq', 'help', 'shipping-returns', 'order-policy'].includes(pageKey) ? (
         <div className="faq-list">
           {faqs.map(([q, a]) => (
-            <details key={q} open={page !== 'faq'}>
+            <details key={q} open={pageKey !== 'faq'}>
               <summary>{q}<Plus size={18} /></summary>
               <p>{a}</p>
             </details>
           ))}
         </div>
-      ) : page === 'care-guide' || page === 'caring-for-your-crockery' ? (
+      ) : pageKey === 'care-guide' || pageKey === 'caring-for-your-crockery' ? (
         <div className="faq-list">
           {care.map(([q, a]) => (
             <details key={q} open>
@@ -1168,23 +1218,23 @@ function InfoPage({ page, orderNow }: { page: string; orderNow: () => void }) {
             </details>
           ))}
         </div>
-      ) : page === 'contact' ? (
+      ) : pageKey === 'contact' ? (
         <>
-          <p>Need help choosing a piece or placing an order? Share your selection with us on WhatsApp.</p>
+          <p>Need help choosing a piece or placing an order? Share your selection with us on WhatsApp ({shopConfig.displayPhone}).</p>
           <button className="button" onClick={orderNow}>Contact on WhatsApp <MessageCircle size={18} /></button>
           <p className="advance-note">{shopConfig.policy}</p>
         </>
-      ) : page === 'privacy-policy' ? (
+      ) : ['privacy', 'privacy-policy'].includes(pageKey) ? (
         <>
           <p>Your cart is saved in this browser so you can return to your selection. Delivery details entered in the order form are included in a WhatsApp message only when you continue to WhatsApp.</p>
           <p>This website does not collect payment card details. WhatsApp processes information under its own privacy policy. Contact Kings Crockery about information shared when placing an order.</p>
         </>
-      ) : page === 'terms-of-use' ? (
+      ) : ['terms', 'terms-of-use'].includes(pageKey) ? (
         <>
           <p>Product availability, specifications, prices and delivery terms must be confirmed with Kings Crockery through WhatsApp before payment. A cart selection is an order enquiry until accepted by Kings Crockery.</p>
           <p>{shopConfig.policy}</p>
         </>
-      ) : page === 'accessibility' ? (
+      ) : pageKey === 'accessibility' ? (
         <p>You can navigate this store using your keyboard, browse at larger text sizes, and use reduced-motion settings. If you need help with an order, contact us through WhatsApp.</p>
       ) : (
         <Missing />

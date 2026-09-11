@@ -25,11 +25,18 @@ const slug = (s: string) => s.toLowerCase().replaceAll(' & ', '-').replaceAll(' 
 
 export function generateStaticParams() {
   const routes: { path: string[] }[] = [
+    { path: ['collections'] },
     { path: ['collections', 'all'] },
     ...categories.map(c => ({ path: ['collections', slug(c)] })),
     ...catalog.map(p => ({ path: ['products', p.id] })),
     { path: ['cart'] },
-    { path: ['pages', 'build-your-bundle'] },
+    { path: ['shop'] },
+    { path: ['about'] },
+    { path: ['contact'] },
+    { path: ['faq'] },
+    { path: ['terms'] },
+    { path: ['privacy'] },
+    { path: ['pages', 'about'] },
     { path: ['pages', 'our-story'] },
     { path: ['pages', 'craftsmanship'] },
     { path: ['pages', 'care-guide'] },
@@ -41,6 +48,10 @@ export function generateStaticParams() {
     { path: ['pages', 'terms-of-use'] },
     { path: ['pages', 'accessibility'] },
     { path: ['pages', 'our-hours-blog'] },
+    { path: ['pages', 'build-your-bundle'] },
+    { path: ['pages', 'setting-the-everyday-table'] },
+    { path: ['pages', 'mixing-your-colours'] },
+    { path: ['pages', 'caring-for-your-crockery'] },
   ];
   return routes;
 }
