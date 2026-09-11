@@ -138,8 +138,8 @@ const colors: Record<string, string> = {
 };
 
 function collectionProducts(key: string) {
-  const q = key.toLowerCase();
-  if (['all', 'new-arrivals', 'best-sellers', 'sale'].includes(q)) return catalog;
+  const q = (key || 'all').toLowerCase();
+  if (['all', 'collections', 'shop', 'new-arrivals', 'best-sellers', 'sale'].includes(q)) return catalog;
   return catalog.filter(p => {
     const slugName = slug(p.type);
     const searchTarget = (p.type + ' ' + p.name + ' ' + p.tags.join(' ')).toLowerCase();
@@ -223,7 +223,61 @@ export default function Storefront({ path }: { path: string }) {
   const [mobile, setMobile] = useState(false);
   const [order, setOrder] = useState(false);
   const [notice, setNotice] = useState('');
-  const [homeCategory, setHomeCategory] = useState('all');
+  const [activePath, setActivePath] = useState(path || '/');
+  const closeTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Synchronize client-side navigation so all page links render instantly
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updatePath = () => {
+      setActivePath(window.location.pathname || '/');
+    };
+
+    updatePath();
+    window.addEventListener('popstate', updatePath);
+
+    const origPush = window.history.pushState;
+    window.history.pushState = function (...args) {
+      const res = origPush.apply(this, args);
+      updatePath();
+      return res;
+    };
+
+    const origReplace = window.history.replaceState;
+    window.history.replaceState = function (...args) {
+      const res = origReplace.apply(this, args);
+      updatePath();
+      return res;
+    };
+
+    return () => {
+      window.removeEventListener('popstate', updatePath);
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
+    };
+  }, []);
+
+  const openMenu = (label: string) => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    setMenu(label);
+  };
+
+  const scheduleCloseMenu = () => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    closeTimeout.current = setTimeout(() => {
+      setMenu('');
+    }, 220);
+  };
+
+  const cancelCloseMenu = () => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+  };
+
+  const toggleMenu = (label: string) => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    setMenu(prev => (prev === label ? '' : label));
+  };
 
   // Hydrate the browser-owned cart after SSR.
   useEffect(() => {
@@ -279,8 +333,9 @@ export default function Storefront({ path }: { path: string }) {
     window.location.href = `https://wa.me/${shopConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
   };
 
-  const normalizedPath = (path || '/').replace(/\/+$/, '') || '/';
-  const mainKey = normalizedPath.split('/').pop() || '';
+  const currentPath = typeof window !== 'undefined' ? activePath : (path || '/');
+  const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
+  const mainKey = normalizedPath.split('/').filter(Boolean).pop() || '';
   const p = catalog.find(p => p.id === mainKey);
 
   const activeDepartment = navDepartments.find(d => d.label === menu);
@@ -290,7 +345,11 @@ export default function Storefront({ path }: { path: string }) {
       <a className="skip-link" href="#main">Skip to content</a>
       <div className="announcement">{shopConfig.policy}</div>
 
-      <header className="site-header" onMouseLeave={() => setMenu('')}>
+      <header
+        className="site-header"
+        onMouseLeave={scheduleCloseMenu}
+        onMouseEnter={cancelCloseMenu}
+      >
         <div className="header-main">
           <div className="header-left">
             <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setMobile(true)}>
@@ -301,7 +360,7 @@ export default function Storefront({ path }: { path: string }) {
             </button>
           </div>
 
-          <Link className="wordmark" href="/">KINGS CROCKERY</Link>
+          <Link className="wordmark" href="/" onClick={() => setMenu('')}>KINGS CROCKERY</Link>
 
           <button className="cart-button" aria-label={`Open cart, ${count} items`} onClick={() => setDrawer(true)}>
             <ShoppingBag size={23} />
@@ -310,42 +369,46 @@ export default function Storefront({ path }: { path: string }) {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="desktop-nav">
-          <Link
-            href="/collections/all"
-            className="nav-link-btn"
+        <nav className="desktop-nav" aria-label="Store Navigation">
+          <button
+            type="button"
+            className={`nav-link-btn ${menu === 'All Categories' ? 'active' : ''}`}
             aria-expanded={menu === 'All Categories'}
-            onMouseEnter={() => setMenu('All Categories')}
-            onClick={() => setMenu('')}
+            onMouseEnter={() => openMenu('All Categories')}
+            onClick={() => toggleMenu('All Categories')}
           >
             All Categories <ChevronDown size={13} />
-          </Link>
+          </button>
           {navDepartments.map(d => (
-            <Link
+            <button
               key={d.label}
-              href={categoryUrl(d.items[0])}
-              className="nav-link-btn"
+              type="button"
+              className={`nav-link-btn ${menu === d.label ? 'active' : ''}`}
               aria-expanded={menu === d.label}
-              onMouseEnter={() => setMenu(d.label)}
-              onClick={() => setMenu('')}
+              onMouseEnter={() => openMenu(d.label)}
+              onClick={() => toggleMenu(d.label)}
             >
               {d.label} <ChevronDown size={13} />
-            </Link>
+            </button>
           ))}
-          <Link
-            href="/pages/our-story"
-            className="nav-link-btn"
+          <button
+            type="button"
+            className={`nav-link-btn ${menu === 'About' ? 'active' : ''}`}
             aria-expanded={menu === 'About'}
-            onMouseEnter={() => setMenu('About')}
-            onClick={() => setMenu('')}
+            onMouseEnter={() => openMenu('About')}
+            onClick={() => toggleMenu('About')}
           >
             About <ChevronDown size={13} />
-          </Link>
+          </button>
         </nav>
 
         {/* Dynamic Mega Menu */}
         {menu && (
-          <div className="mega-menu">
+          <div
+            className="mega-menu"
+            onMouseEnter={cancelCloseMenu}
+            onMouseLeave={scheduleCloseMenu}
+          >
             {menu === 'All Categories' ? (
               <>
                 <div>
@@ -412,7 +475,7 @@ export default function Storefront({ path }: { path: string }) {
       </header>
 
       <main id="main">
-        {path === '/' ? (
+        {normalizedPath === '/' ? (
           <>
             {/* Hero Banner */}
             <section className="hero">
@@ -440,32 +503,6 @@ export default function Storefront({ path }: { path: string }) {
             <section className="section">
               <h2>Best Sellers & New Arrivals</h2>
               <Grid items={best} add={add} />
-            </section>
-
-            {/* Interactive All 17 Collections Explorer on Main Website */}
-            <section className="section home-categories-explorer" style={{ paddingTop: '10px' }}>
-              <div className="collection-heading" style={{ background: 'transparent', padding: '0 0 28px' }}>
-                <p className="eyebrow">Explore Kings Crockery</p>
-                <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', marginBottom: '12px' }}>
-                  {homeCategory === 'all' ? 'All 17 Collections' : (categories.find(c => slug(c) === homeCategory) || homeCategory)}
-                </h2>
-                <p>Browse dining essentials, fine dinner sets, cookware, tea sets and serving pieces right here.</p>
-              </div>
-
-              <CategoryTabs
-                collection={homeCategory}
-                onSelectCategory={(s) => setHomeCategory(s)}
-              />
-
-              <div className="collection-grid-wrap" key={homeCategory} style={{ marginTop: '30px' }}>
-                <Grid items={collectionProducts(homeCategory).slice(0, 16)} add={add} />
-              </div>
-
-              <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                <Link className="button" href={categoryUrl(homeCategory)}>
-                  View Full {homeCategory === 'all' ? 'Catalogue (150+ Items)' : (categories.find(c => slug(c) === homeCategory) || homeCategory)} Collection <ArrowRight size={17} />
-                </Link>
-              </div>
             </section>
 
             {/* Split Section: Nonstick & Cookware */}
@@ -927,13 +964,14 @@ function CategoryTabs({
 
 /* Collection View */
 function Collection({ collection: initialCollection, add }: { collection: string; add: (p: Product, c: string) => void }) {
-  const [currentCollection, setCurrentCollection] = useState(initialCollection);
+  const normalizeCollectionSlug = (s: string) => (!s || s === 'collections' || s === 'shop') ? 'all' : s;
+  const [currentCollection, setCurrentCollection] = useState(normalizeCollectionSlug(initialCollection));
   const [sort, setSort] = useState('Featured');
   const [color, setColor] = useState('All colours');
   const [limit, setLimit] = useState(24);
 
   useEffect(() => {
-    setCurrentCollection(initialCollection);
+    setCurrentCollection(normalizeCollectionSlug(initialCollection));
     setColor('All colours');
     setLimit(24);
   }, [initialCollection]);
@@ -941,8 +979,8 @@ function Collection({ collection: initialCollection, add }: { collection: string
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const seg = window.location.pathname.split('/').pop() || 'all';
-      setCurrentCollection(seg);
+      const seg = window.location.pathname.split('/').filter(Boolean).pop() || 'all';
+      setCurrentCollection(normalizeCollectionSlug(seg));
       setColor('All colours');
       setLimit(24);
     };
