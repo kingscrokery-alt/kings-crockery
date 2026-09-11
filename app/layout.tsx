@@ -1,4 +1,27 @@
 import type { Metadata } from 'next';
 import './globals.css';
-export const metadata: Metadata = {title:'Kings Crockery | A beautiful table, every day',description:'Discover crockery, ceramics, flatware and table essentials. Confirm your order with a Rs 250 advance and order through WhatsApp.'};
-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="en"><body>{children}</body></html>}
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://kingscrockery.com'),
+  title: 'Kings Crockery | Luxury Tableware, Dinner Sets & Cookware',
+  description: 'Discover fine bone china, marble dinner sets, premium nonstick cookware, tea sets, and elegant dining essentials at Kings Crockery. Order easily with WhatsApp confirmation.',
+  openGraph: {
+    title: 'Kings Crockery | Luxury Tableware, Dinner Sets & Cookware',
+    description: 'Discover fine bone china, marble dinner sets, premium nonstick cookware, tea sets, and tableware.',
+    url: 'https://kingscrockery.com',
+    siteName: 'Kings Crockery',
+    locale: 'en_PK',
+    type: 'website'
+  },
+  icons: {
+    icon: '/favicon.svg'
+  }
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
