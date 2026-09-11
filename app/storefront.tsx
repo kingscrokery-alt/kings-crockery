@@ -251,8 +251,43 @@ export default function Storefront({ path }: { path: string }) {
       return res;
     };
 
+    const handleCaptureClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (!href) return;
+
+      // Ignore hash links or external protocols
+      if (href.startsWith('#') || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+
+      // Ignore modified clicks or new tabs
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || anchor.target === '_blank') {
+        return;
+      }
+
+      // Intercept internal routing
+      if (href.startsWith('/')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (closeTimeout.current) clearTimeout(closeTimeout.current);
+        setMenu('');
+        setDrawer(false);
+        setSearch(false);
+        setMobile(false);
+        window.history.pushState(null, '', href);
+        setActivePath(href);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    };
+
+    document.addEventListener('click', handleCaptureClick, true);
+
     return () => {
       window.removeEventListener('popstate', updatePath);
+      document.removeEventListener('click', handleCaptureClick, true);
       window.history.pushState = origPush;
       window.history.replaceState = origReplace;
     };
@@ -334,9 +369,10 @@ export default function Storefront({ path }: { path: string }) {
   };
 
   const currentPath = typeof window !== 'undefined' ? activePath : (path || '/');
-  const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
+  const pathWithoutQuery = currentPath.split('?')[0].split('#')[0];
+  const normalizedPath = pathWithoutQuery.replace(/\/+$/, '') || '/';
   const mainKey = normalizedPath.split('/').filter(Boolean).pop() || '';
-  const p = catalog.find(p => p.id === mainKey);
+  const p = catalog.find(p => p.id === mainKey || slug(p.name) === mainKey);
 
   const activeDepartment = navDepartments.find(d => d.label === menu);
 
@@ -557,14 +593,14 @@ export default function Storefront({ path }: { path: string }) {
             {/* 17 Categories Showcase Strip */}
             <CategoryStrip />
           </>
-        ) : normalizedPath.includes('/products/') ? (
+        ) : normalizedPath.startsWith('/products/') || normalizedPath.startsWith('/product/') ? (
           p ? (
             <ProductPage key={p.id} p={p} add={add} orderNow={(color, qty) => { add(p, color, qty); setDrawer(false); setOrder(true); }} />
           ) : (
             <Missing />
           )
-        ) : normalizedPath.startsWith('/collections') || normalizedPath === '/shop' ? (
-          <Collection collection={mainKey === 'collections' || mainKey === 'shop' || !mainKey ? 'all' : mainKey} add={add} />
+        ) : normalizedPath.startsWith('/collections') || normalizedPath === '/shop' || normalizedPath === '/products' || normalizedPath === '/product' ? (
+          <Collection collection={mainKey === 'collections' || mainKey === 'shop' || mainKey === 'products' || mainKey === 'product' || !mainKey ? 'all' : mainKey} add={add} />
         ) : normalizedPath === '/cart' ? (
           <section className="section cart-page">
             <h1>Your Shopping Cart</h1>

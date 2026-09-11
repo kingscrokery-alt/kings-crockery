@@ -17,11 +17,13 @@ function ensureDirAndCopy(srcFile, targetIndexHtml) {
 
 console.log('Preparing static routes for AWS Amplify hosting...');
 
-// 1. collections/index.html from collections/all.html
+// 1. collections/index.html, shop/index.html, products/index.html, product/index.html from collections/all.html
 const collAll = path.join(clientDir, 'collections/all.html');
 if (fs.existsSync(collAll)) {
   ensureDirAndCopy(collAll, path.join(clientDir, 'collections/index.html'));
   ensureDirAndCopy(collAll, path.join(clientDir, 'shop/index.html'));
+  ensureDirAndCopy(collAll, path.join(clientDir, 'products/index.html'));
+  ensureDirAndCopy(collAll, path.join(clientDir, 'product/index.html'));
 }
 
 // 2. collections/*.html -> collections/*/index.html
@@ -36,14 +38,17 @@ if (fs.existsSync(collDir)) {
   }
 }
 
-// 3. products/*.html -> products/*/index.html
+// 3. products/*.html -> products/*/index.html and mirror to product/*/index.html
 const prodDir = path.join(clientDir, 'products');
 if (fs.existsSync(prodDir)) {
   const files = fs.readdirSync(prodDir);
   for (const file of files) {
     if (file.endsWith('.html') && file !== 'index.html') {
       const name = file.replace(/\.html$/, '');
-      ensureDirAndCopy(path.join(prodDir, file), path.join(prodDir, name, 'index.html'));
+      const src = path.join(prodDir, file);
+      ensureDirAndCopy(src, path.join(prodDir, name, 'index.html'));
+      ensureDirAndCopy(src, path.join(clientDir, 'product', name, 'index.html'));
+      ensureDirAndCopy(src, path.join(clientDir, 'product', file));
     }
   }
 }
