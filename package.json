@@ -9,6 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
+    "deploy": "git add . && git commit -m \"Update live site\" && git push origin main",
     "lint": "oxlint",
     "format": "oxfmt",
     "start:cf": "wrangler dev --config dist/server/wrangler.json"
